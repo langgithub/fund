@@ -1,0 +1,3 @@
+db.ManagerInfo.update({},{"$set":{"status":NumberInt(0)}},{upsert:true,multi:true})
+db.ManagerFund.ensureIndex({"m_f_c":1},{unique:true})
+db.ManagerFund.getIndexes()

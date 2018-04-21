@@ -9,7 +9,7 @@ import threading
 from scrapy_redis.spiders import RedisSpider
 
 
-class ManagerSpider(scrapy.Spider):
+class ManagerSpider(RedisSpider):
     name = 'Manager'
     allowed_domains = ['www.howbuy.com']
     start_urls = ['http://www.howbuy.com/']
@@ -21,12 +21,10 @@ class ManagerSpider(scrapy.Spider):
     def mongo_to_redis(self):
         while True:
             if self.redis.list_len(self.redis_key) == 0:
-                seeds = self.mongo.manager_seed_find()
+                seeds = self.mongo.manager_info_seed_find()
                 print("查到基金经济人种子=======》" + str(seeds.count()) + "个")
                 for seed in seeds:
-                    print(seed)
-                    pass
-                    #self.redis.set_seed(self.redis_key, "https://www.howbuy.com/fund/manager/{0}/".format(seed["manager_code"]))
+                    self.redis.set_seed(self.redis_key, "https://www.howbuy.com/fund/manager/{0}/".format(seed["manager_code"]))
                 print("redis 装入完毕，休息10s")
             time.sleep(10)
 
@@ -50,8 +48,9 @@ class ManagerSpider(scrapy.Spider):
         html = scrapy.Selector(text=response.body)
         item_manager=Manager2().getInstance()
         item_manager["manager_code"]=re.search("manager/(.*)/",response.url).group(1)
-        item_manager["current_company_code"] = re.search("company/(.*?)/",html.css("#dqszgs::attr(href)").extract()[0]).group(1)
-        item_manager["current_company_name"] = html.css("#dqszgs::text").extract()[0]
+        if len(html.css("#dqszgs::attr(href)").extract())!=0:
+            item_manager["current_company_code"] = re.search("company/(.*?)/",html.css("#dqszgs::attr(href)").extract()[0]).group(1)
+            item_manager["current_company_name"] = html.css("#dqszgs::text").extract()[0]
         item_manager["person_instr"]=html.css("div.des_con::text").extract()[0].replace("\r\n","").replace(" ","").replace("\t","")
         content_m=html.css("div.content_m")
         for tr in content_m.css("tr"):
@@ -70,8 +69,10 @@ class ManagerSpider(scrapy.Spider):
                 if "从业年均回报" in str(tds[index].extract()):
                     item_manager["work_repay_avg"]=tds[index+1].css("::text").extract()[0]
         fund_info=";".join(html.css("div.content_des_con li::text").extract()).replace("\r\n","").replace(" ","")
-        item_manager["the_most_repay"]=html.css("div.top_right span.cRed::text").extract()[0]
-        item_manager["the_most_retreat"]=html.css("div.top_right span.cGreen::text").extract()[0]
+        if len(html.css("div.top_right span.cRed::text").extract())!=0:
+            item_manager["the_most_repay"]=html.css("div.top_right span.cRed::text").extract()[0]
+        if len(html.css("div.top_right span.cGreen::text").extract()) != 0:
+            item_manager["the_most_retreat"]=html.css("div.top_right span.cGreen::text").extract()[0]
         item_manager["ts"]=time.strftime("%Y-%m-%D %H:%M:%S", time.localtime(time.time()))
         item_manager["status"]=1
 
@@ -80,6 +81,7 @@ class ManagerSpider(scrapy.Spider):
         for index in range(1,len(trs)):
             manager_fund = ManagerFund().getInstance()
             tds=trs[index].css("td")
+            manager_fund["manager_code"]=item_manager["manager_code"]
             manager_fund["fund_name"]=tds[0].css("a::text").extract()[0]
             manager_fund["fund_code"]=re.search("fund/(.*?)/",str(tds[0].css("a::attr(href)").extract())).group(1)
             manager_fund["company_name"]=item_manager["current_company_name"]
@@ -91,8 +93,12 @@ class ManagerSpider(scrapy.Spider):
             manager_fund["this_most_repay"] = tds[5].css("::text").extract()[0]
             manager_fund["ts"]=time.strftime("%Y-%m-%D %H:%M:%S", time.localtime(time.time()))
             manager_fund["status"]=1
+            manager_fund["m_f_c"]=manager_fund["manager_code"]+"_"+manager_fund["fund_code"]+"_"+manager_fund["company_code"]
             #print(manager_fund)
-            self.mongo.process_item(manager_fund)
+            try:
+                self.mongo.process_item(manager_fund)
+            except Exception as e:
+                print(e)
 
         trs=html.css("div.history_content tr.line_b")
         for tr in trs:
@@ -103,6 +109,7 @@ class ManagerSpider(scrapy.Spider):
             for _tr in current_trs:
                 _tds=_tr.css("td")
                 manager_fund = ManagerFund().getInstance()
+                manager_fund["manager_code"] = item_manager["manager_code"]
                 manager_fund["company_name"] = company_name
                 manager_fund["company_code"] = company_code
                 manager_fund["fund_name"] = _tds[0].css("a::text").extract()[0]
@@ -114,8 +121,14 @@ class ManagerSpider(scrapy.Spider):
                 manager_fund["this_most_repay"] = _tds[4].css("::text").extract()[0]
                 manager_fund["ts"] = time.strftime("%Y-%m-%D %H:%M:%S", time.localtime(time.time()))
                 manager_fund["status"] = 1
+                manager_fund["m_f_c"] = manager_fund["manager_code"] + "_" + manager_fund["fund_code"] + "_" + \
+                                        manager_fund["company_code"]
+
                 #print(manager_fund)
-                self.mongo.process_item(manager_fund)
+                try:
+                    self.mongo.process_item(manager_fund)
+                except Exception as e:
+                    print(e)
 
         #更细种子状态
         self.mongo.manager_info_update(item_manager)

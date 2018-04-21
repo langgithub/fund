@@ -115,6 +115,8 @@ class Manager2(scrapy.Item):
         return self
 
 class ManagerFund(scrapy.Item):
+    m_f_c=scrapy.Field()
+    manager_code=scrapy.Field()
     fund_name=scrapy.Field()
     fund_code=scrapy.Field()
     company_name=scrapy.Field()
@@ -131,7 +133,8 @@ class ManagerFund(scrapy.Item):
     def getInstance(self):
         self["fund_name"], self["fund_code"], self["company_name"], self["company_code"] = '', '', '', ''
         self["fund_tpye"], self["this_company_start"], self["this_company_duration"], self["this_most_retreat"] = '', '', '', ''
-        self["this_most_repay"], self["ts"], self["status"] ,self["this_company_end"]= '', '', '',''
+        self["this_most_repay"], self["ts"], self["status"] ,self["this_company_end"],self["manager_code"]= '', '', '','',''
+        self["m_f_c"]=''
         return self
 
 

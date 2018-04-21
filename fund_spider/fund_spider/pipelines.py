@@ -35,11 +35,13 @@ class MongoPipeline(object):
 
     def process_item(self, item, spider):
         collection_name = item.__class__.__name__
+        log.msg("insert {0}".format(collection_name),level=log.INFO)
         self.db[collection_name].insert(dict(item))
         return item
 
     def process_item(self, item):
         collection_name = item.__class__.__name__
+        log.msg("insert {0}".format(collection_name), level=log.INFO)
         self.db[collection_name].insert(dict(item))
         return item
 
@@ -91,10 +93,11 @@ class MongoPipeline(object):
                                               "status":info["status"]
                                           }},True)
 
-    def manager_seed_find(self):
-        return self.db["ManagerInfo"].find({"status":"0"},{"manager_code": 1, "_id": 0}).limit(5)
+    def manager_info_seed_find(self):
+        return self.db["ManagerInfo"].find({"status":0},{"manager_code": 1, "_id": 0})
 
     def manager_info_update(self,info):
+        log.msg("update ManagerInfo")
         return self.db["ManagerInfo"].update_one({"manager_code":info["manager_code"]},
                                           {"$set":{
                                               "current_company_code":info["current_company_code"],
