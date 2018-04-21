@@ -92,6 +92,27 @@ class MongoPipeline(object):
                                           }},True)
 
     def manager_seed_find(self):
+        return self.db["ManagerInfo"].find({"status":"0"},{"manager_code": 1, "_id": 0}).limit(5)
+
+    def manager_info_update(self,info):
+        return self.db["ManagerInfo"].update_one({"manager_code":info["manager_code"]},
+                                          {"$set":{
+                                              "current_company_code":info["current_company_code"],
+                                              "current_company_name": info["current_company_name"],
+                                              "person_instr": info["person_instr"],
+                                              "work_start": info["work_start"],
+                                              "work_duration": info["work_duration"],
+                                              "work_company_num":info["work_company_num"],
+                                              "work_frequency": info["work_frequency"],
+                                              "work_fund_num": info["work_fund_num"],
+                                              "work_repay_avg": info["work_repay_avg"],
+                                              "the_most_repay": info["the_most_repay"],
+                                              "the_most_retreat": info["the_most_retreat"],
+                                              "ts": info["ts"],
+                                              "status": info["status"]
+                                          }},True)
+
+    def manager_seed_find(self):
         return self.db["Manager"].find({"status": 0}, {"url": 1, "_id": 0}).limit(50)
 
 

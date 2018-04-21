@@ -91,5 +91,49 @@ class Manager(scrapy.Item):
         self["ts"], self["status"],self["cur_company_code"],self["word_status"]='','','',''
         return self
 
+class Manager2(scrapy.Item):
+    manager_code=scrapy.Field()
+    current_company_code=scrapy.Field()
+    current_company_name=scrapy.Field()
+    person_instr=scrapy.Field()
+    work_start=scrapy.Field()
+    work_duration=scrapy.Field()
+    work_company_num=scrapy.Field()
+    work_frequency=scrapy.Field()
+    work_fund_num=scrapy.Field()
+    work_repay_avg=scrapy.Field()
+    the_most_repay=scrapy.Field()
+    the_most_retreat=scrapy.Field()
+    ts=scrapy.Field()
+    status=scrapy.Field()
+
+    def getInstance(self):
+        self["current_company_code"],self["current_company_name"],self["person_instr"],self["work_start"]='','','',''
+        self["work_duration"], self["work_company_num"], self["work_frequency"], self["work_fund_num"] = '', '', '', ''
+        self["work_repay_avg"], self["the_most_repay"],self["the_most_retreat"],self["ts"]='','','',''
+        self["status"],self["manager_code"]='',''
+        return self
+
+class ManagerFund(scrapy.Item):
+    fund_name=scrapy.Field()
+    fund_code=scrapy.Field()
+    company_name=scrapy.Field()
+    company_code=scrapy.Field()
+    fund_tpye=scrapy.Field()
+    this_company_start=scrapy.Field()
+    this_company_end = scrapy.Field()
+    this_company_duration=scrapy.Field()
+    this_most_retreat=scrapy.Field()
+    this_most_repay=scrapy.Field()
+    ts=scrapy.Field()
+    status=scrapy.Field()
+
+    def getInstance(self):
+        self["fund_name"], self["fund_code"], self["company_name"], self["company_code"] = '', '', '', ''
+        self["fund_tpye"], self["this_company_start"], self["this_company_duration"], self["this_most_retreat"] = '', '', '', ''
+        self["this_most_repay"], self["ts"], self["status"] ,self["this_company_end"]= '', '', '',''
+        return self
+
+
 
 
