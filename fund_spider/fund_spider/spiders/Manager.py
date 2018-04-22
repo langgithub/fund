@@ -38,7 +38,7 @@ class ManagerSpider(RedisSpider):
             t = threading.Thread(target=self.mongo_to_redis)
             t.start()
         elif self.buzhou == 3:
-            url = "https://www.howbuy.com/fund/manager/30062613/"
+            url = "https://www.howbuy.com/fund/manager/30475190/"
             yield scrapy.Request(url=url)
         elif self.buzhou == 4:
             url = "https://www.howbuy.com/fund/001558/"
@@ -47,6 +47,8 @@ class ManagerSpider(RedisSpider):
     def parse(self, response):
         html = scrapy.Selector(text=response.body)
         item_manager=Manager2().getInstance()
+        if len(html.css("div.currentPath::text"))==0:
+            return
         item_manager["manager_code"]=re.search("manager/(.*)/",response.url).group(1)
         if len(html.css("#dqszgs::attr(href)").extract())!=0:
             item_manager["current_company_code"] = re.search("company/(.*?)/",html.css("#dqszgs::attr(href)").extract()[0]).group(1)
@@ -59,7 +61,8 @@ class ManagerSpider(RedisSpider):
                 if "首次任职时间" in str(tds[index].extract()):
                     item_manager["work_start"]=tds[index+1].css("::text").extract()[0]
                 if "任基金经理时间" in str(tds[index].extract()):
-                    item_manager["work_duration"]=tds[index+1].css("::text").extract()[0]
+                    if len(tds[index+1].css("::text").extract())!=0:
+                        item_manager["work_duration"]=tds[index+1].css("::text").extract()[0]
                 if "历任公司数" in str(tds[index].extract()):
                     item_manager["work_company_num"]=tds[index+1].css("::text").extract()[0].replace("\r\n","").replace(" ","")
                 if "跳槽频率" in str(tds[index].extract()):
@@ -86,7 +89,8 @@ class ManagerSpider(RedisSpider):
             manager_fund["fund_code"]=re.search("fund/(.*?)/",str(tds[0].css("a::attr(href)").extract())).group(1)
             manager_fund["company_name"]=item_manager["current_company_name"]
             manager_fund["company_code"] = item_manager["current_company_code"]
-            manager_fund["fund_tpye"]=tds[1].css("::text").extract()[0]
+            if len(tds[1].css("::text").extract())!=0:
+                manager_fund["fund_tpye"]=tds[1].css("::text").extract()[0]
             manager_fund["this_company_start"]=''
             manager_fund["this_company_duration"] = tds[3].css("::text").extract()[0]
             manager_fund["this_most_retreat"] = tds[4].css("::text").extract()[0]
@@ -103,6 +107,8 @@ class ManagerSpider(RedisSpider):
         trs=html.css("div.history_content tr.line_b")
         for tr in trs:
             tds=tr.css("td")
+            if len(tds[0].css("a::text").extract())==0:
+                continue
             company_name=tds[0].css("a::text").extract()[0]
             company_code=re.search("fund/company/(.*?)/",str(tds[0].css("a::attr(href)").extract())).group(1)
             current_trs=tds[1].css("table tr")
@@ -114,9 +120,11 @@ class ManagerSpider(RedisSpider):
                 manager_fund["company_code"] = company_code
                 manager_fund["fund_name"] = _tds[0].css("a::text").extract()[0]
                 manager_fund["fund_code"] = re.search("fund/(.*?)/",str(_tds[0].css("a::attr(href)").extract())).group(1)
-                manager_fund["fund_tpye"]=_tds[1].css("::text").extract()[0]
+                if len(_tds[1].css("::text").extract()) != 0:
+                    manager_fund["fund_tpye"]=_tds[1].css("::text").extract()[0]
                 manager_fund["this_company_start"]=_tds[2].css("::text").extract()[0]
-                manager_fund["this_company_duration"] = _tds[3].css("::text").extract()[0]
+                if len(_tds[3].css("::text").extract())!=0:
+                    manager_fund["this_company_duration"] = _tds[3].css("::text").extract()[0]
                 manager_fund["this_most_retreat"] = ''
                 manager_fund["this_most_repay"] = _tds[4].css("::text").extract()[0]
                 manager_fund["ts"] = time.strftime("%Y-%m-%D %H:%M:%S", time.localtime(time.time()))
